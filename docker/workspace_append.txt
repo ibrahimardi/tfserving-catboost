@@ -1,0 +1,17 @@
+
+# --- catboost_serving: prebuilt libcatboostmodel binaries (CatBoost v1.2.8) ---
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+
+http_file(
+    name = "libcatboostmodel_linux_x86_64",
+    urls = ["https://github.com/catboost/catboost/releases/download/v1.2.8/libcatboostmodel-linux-x86_64-1.2.8.so"],
+    sha256 = "5a0de49d0bc81e460fd983da0f0f9d819e804b4ae19c6c9451b31e4f57d06545",
+    downloaded_file_path = "libcatboostmodel.so",
+)
+
+http_file(
+    name = "libcatboostmodel_linux_aarch64",
+    urls = ["https://github.com/catboost/catboost/releases/download/v1.2.8/libcatboostmodel-linux-aarch64-1.2.8.so"],
+    sha256 = "0f5f55286b805c30b719bd52fdf661dc94a694207ae1914facbd5018e09349f3",
+    downloaded_file_path = "libcatboostmodel.so",
+)

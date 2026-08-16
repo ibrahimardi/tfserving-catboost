@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package catboost.serving;
+
+import "tensorflow_serving/apis/model.proto";  // reuse ModelSpec (name + version)
+
+message Row {
+  repeated float numeric = 1;      // order = training feature order
+  repeated string categorical = 2; // order = training cat-feature order
+}
+
+message CatBoostPredictRequest {
+  tensorflow.serving.ModelSpec model_spec = 1;
+  repeated Row rows = 2;
+  bool output_probabilities = 3;   // false => raw values
+}
+
+message CatBoostPredictResponse {
+  tensorflow.serving.ModelSpec model_spec = 1;  // echoes resolved version
+  int32 dimension = 2;
+  repeated double values = 3;      // row-major [rows x dimension]
+}
+
+service CatBoostPredictionService {
+  rpc Predict(CatBoostPredictRequest) returns (CatBoostPredictResponse);
+}

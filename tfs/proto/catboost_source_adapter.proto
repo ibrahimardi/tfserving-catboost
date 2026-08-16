@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package catboost.serving;
+
+// Registration key for the "catboost" platform in --platform_config_file.
+// Empty for now; future options (e.g. thread pools) go here.
+message CatBoostSourceAdapterConfig {}

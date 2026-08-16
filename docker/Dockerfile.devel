@@ -1,0 +1,64 @@
+# L2 build: CatBoost platform inside the TensorFlow Serving tree.
+#
+# Build (from repo root; amd64-only upstream image, use Rosetta on Apple
+# Silicon):
+#   docker build --platform linux/amd64 \
+#     -f docker/Dockerfile.devel -t catboost-serving:devel .
+#
+# NOTE: the published devel image wipes its bazel cache (`bazel clean
+# --expunge` in its final stage), so the `prewarm` layer below recompiles the
+# TFS/TF dependency tree once (hours on first build, cached afterwards).
+# Iterating on catboost_serving sources only rebuilds the last layers.
+FROM tensorflow/serving:2.20.0-devel
+
+ARG BAZEL_OPTS="--jobs=6 --local_ram_resources=12288"
+ARG BUILD_OPTS="-c opt"
+
+WORKDIR /tensorflow-serving
+
+# Register the libcatboostmodel prebuilt binaries with the TFS WORKSPACE.
+COPY docker/workspace_append.txt /tmp/workspace_append.txt
+RUN cat /tmp/workspace_append.txt >> WORKSPACE
+
+# Prewarm layer: compile the TFS/TF dependency tree our targets need, before
+# our sources are copied in — so source iteration doesn't rebuild TF.
+RUN bazel build --color=yes --curses=yes ${BAZEL_OPTS} \
+    --verbose_failures --output_filter=DONT_MATCH_ANYTHING ${BUILD_OPTS} \
+    //tensorflow_serving/model_servers:server_core \
+    //tensorflow_serving/model_servers:model_service_impl \
+    //tensorflow_serving/model_servers:grpc_status_util \
+    //tensorflow_serving/core:simple_loader \
+    //tensorflow_serving/core:availability_preserving_policy \
+    //tensorflow_serving/core/test_util:test_main \
+    //tensorflow_serving/util:proto_util
+
+# Our sources, re-rooted as one package inside the TFS tree. L1 BUILD files
+# (cb/BUILD, third_party/catboost/BUILD) are deliberately NOT copied; the
+# package's BUILD is tfs/BUILD.
+COPY cb/catboost_model.h cb/catboost_model.cc tensorflow_serving/catboost_serving/cb/
+COPY cb/testdata/*.cbm tensorflow_serving/catboost_serving/cb/testdata/
+COPY third_party/catboost/c_api.h third_party/catboost/model_calcer_wrapper.h \
+     tensorflow_serving/catboost_serving/third_party/catboost/
+COPY tfs/catboost_source_adapter.h tfs/catboost_source_adapter.cc \
+     tfs/catboost_source_adapter_test.cc \
+     tfs/catboost_service_impl.h tfs/catboost_service_impl.cc \
+     tfs/main.cc tensorflow_serving/catboost_serving/tfs/
+COPY tfs/proto/ tensorflow_serving/catboost_serving/tfs/proto/
+COPY tfs/BUILD tensorflow_serving/catboost_serving/BUILD
+
+# Build the server and run the adapter test.
+RUN bazel build --color=yes --curses=yes ${BAZEL_OPTS} \
+    --verbose_failures --output_filter=DONT_MATCH_ANYTHING ${BUILD_OPTS} \
+    //tensorflow_serving/catboost_serving:catboost_model_server && \
+    cp bazel-bin/tensorflow_serving/catboost_serving/catboost_model_server \
+    /usr/local/bin/
+
+RUN bazel test --color=yes --curses=yes ${BAZEL_OPTS} \
+    --verbose_failures --test_output=errors ${BUILD_OPTS} \
+    //tensorflow_serving/catboost_serving:catboost_source_adapter_test
+
+EXPOSE 8500
+ENTRYPOINT ["/usr/local/bin/catboost_model_server"]
+CMD ["--port=8500", \
+     "--model_config_file=/config/models.conf", \
+     "--platform_config_file=/config/platform.conf"]
