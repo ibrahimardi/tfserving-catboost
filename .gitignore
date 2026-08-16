@@ -1,0 +1,8 @@
+bazel-*
+__pycache__/
+.DS_Store
+*.pyc
+.ijwb/
+.clwb/
+compile_commands.json
+external/
