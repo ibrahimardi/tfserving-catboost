@@ -51,7 +51,12 @@ RUN bazel build --color=yes --curses=yes ${BAZEL_OPTS} \
     --verbose_failures --output_filter=DONT_MATCH_ANYTHING ${BUILD_OPTS} \
     //tensorflow_serving/catboost_serving:catboost_model_server && \
     cp bazel-bin/tensorflow_serving/catboost_serving/catboost_model_server \
-    /usr/local/bin/
+    /usr/local/bin/ && \
+    # The binary's DT_NEEDED is plain "libcatboostmodel.so" (resolved via
+    # bazel runfiles rpath, which breaks once the binary is copied out of
+    # bazel-bin) — install the library system-wide.
+    cp "$(bazel info output_base)/external/libcatboostmodel_linux_x86_64/file/libcatboostmodel.so" \
+    /usr/local/lib/ && ldconfig
 
 RUN bazel test --color=yes --curses=yes ${BAZEL_OPTS} \
     --verbose_failures --test_output=errors ${BUILD_OPTS} \
