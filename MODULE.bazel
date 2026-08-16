@@ -1,0 +1,41 @@
+# L1 standalone module: CatBoost model wrapper + tests. No TF/TFS dependencies.
+module(
+    name = "catboost_serving",
+    version = "0.1.0",
+)
+
+bazel_dep(name = "abseil-cpp", version = "20260107.1")
+bazel_dep(name = "platforms", version = "1.1.0")
+bazel_dep(name = "rules_cc", version = "0.2.22")
+
+bazel_dep(name = "googletest", version = "1.18.0", dev_dependency = True)
+bazel_dep(name = "nlohmann_json", version = "3.12.0.bcr.2", dev_dependency = True)
+
+http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+
+# Prebuilt libcatboostmodel binaries, pinned to CatBoost v1.2.8.
+# The vendored headers in //third_party/catboost must match this version.
+CATBOOST_VERSION = "1.2.8"
+
+CATBOOST_URL = "https://github.com/catboost/catboost/releases/download/v" + CATBOOST_VERSION
+
+http_file(
+    name = "libcatboostmodel_darwin",
+    downloaded_file_path = "libcatboostmodel.dylib",  # must match the dylib's @rpath install name
+    sha256 = "1b95b7a4523696f6dcf6fd4c009a86014a7cbb42e031912706be2020de111e67",
+    url = CATBOOST_URL + "/libcatboostmodel-darwin-universal2-" + CATBOOST_VERSION + ".dylib",
+)
+
+http_file(
+    name = "libcatboostmodel_linux_x86_64",
+    downloaded_file_path = "libcatboostmodel.so",
+    sha256 = "5a0de49d0bc81e460fd983da0f0f9d819e804b4ae19c6c9451b31e4f57d06545",
+    url = CATBOOST_URL + "/libcatboostmodel-linux-x86_64-" + CATBOOST_VERSION + ".so",
+)
+
+http_file(
+    name = "libcatboostmodel_linux_aarch64",
+    downloaded_file_path = "libcatboostmodel.so",
+    sha256 = "0f5f55286b805c30b719bd52fdf661dc94a694207ae1914facbd5018e09349f3",
+    url = CATBOOST_URL + "/libcatboostmodel-linux-aarch64-" + CATBOOST_VERSION + ".so",
+)
