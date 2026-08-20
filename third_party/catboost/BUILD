@@ -28,10 +28,16 @@ config_setting(
 
 cc_import(
     name = "libcatboostmodel",
+    # Windows links through the import library; the DLL is the runtime piece.
+    interface_library = select({
+        "@platforms//os:windows": "@libcatboostmodel_windows_lib//file",
+        "//conditions:default": None,
+    }),
     shared_library = select({
         "@platforms//os:macos": "@libcatboostmodel_darwin//file",
         ":linux_x86_64": "@libcatboostmodel_linux_x86_64//file",
         ":linux_aarch64": "@libcatboostmodel_linux_aarch64//file",
+        "@platforms//os:windows": "@libcatboostmodel_windows_dll//file",
     }),
 )
 

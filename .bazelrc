@@ -1,3 +1,9 @@
 common --enable_bzlmod
-build --cxxopt=-std=c++17 --host_cxxopt=-std=c++17
+common --enable_platform_specific_config
+
+# C++17 everywhere; MSVC spells the flag differently.
+build:linux --cxxopt=-std=c++17 --host_cxxopt=-std=c++17
+build:macos --cxxopt=-std=c++17 --host_cxxopt=-std=c++17
+build:windows --cxxopt=/std:c++17 --host_cxxopt=/std:c++17
+
 test --test_output=errors

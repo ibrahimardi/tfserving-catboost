@@ -1,9 +1,8 @@
 #include "cb/catboost_model.h"
 
-#include <sys/stat.h>
-
 #include <algorithm>
 #include <cmath>
+#include <fstream>
 #include <memory>
 #include <string>
 #include <utility>
@@ -33,8 +32,9 @@ CatBoostModel::~CatBoostModel() { ModelCalcerDelete(handle_); }
 
 absl::StatusOr<std::unique_ptr<CatBoostModel>> CatBoostModel::Load(
     const std::string& path) {
-  struct stat st;
-  if (stat(path.c_str(), &st) != 0) {
+  // Portable existence check (std::filesystem is availability-gated on older
+  // macOS deployment targets; POSIX stat doesn't exist under MSVC).
+  if (!std::ifstream(path).good()) {
     return absl::NotFoundError(
         absl::StrFormat("model file not found: %s", path));
   }

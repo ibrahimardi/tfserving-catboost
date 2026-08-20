@@ -39,3 +39,19 @@ http_file(
     sha256 = "0f5f55286b805c30b719bd52fdf661dc94a694207ae1914facbd5018e09349f3",
     url = CATBOOST_URL + "/libcatboostmodel-linux-aarch64-" + CATBOOST_VERSION + ".so",
 )
+
+# Windows: DLL + its import library. The .lib internally references
+# "catboostmodel.dll", so the downloaded file names must match it.
+http_file(
+    name = "libcatboostmodel_windows_dll",
+    downloaded_file_path = "catboostmodel.dll",
+    sha256 = "835e1f8b885ca7f7dd1e9ef657b04d33a32ad54dd14d0d81d50e91b2c4d75bcc",
+    url = CATBOOST_URL + "/catboostmodel-windows-x86_64-" + CATBOOST_VERSION + ".dll",
+)
+
+http_file(
+    name = "libcatboostmodel_windows_lib",
+    downloaded_file_path = "catboostmodel.lib",
+    sha256 = "d37e0c453980f572a7e05fabd4664bcc5f6cc575259f905bf3e4e1070c4edc7b",
+    url = CATBOOST_URL + "/catboostmodel-windows-x86_64-" + CATBOOST_VERSION + ".lib",
+)
