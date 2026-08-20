@@ -1,0 +1,41 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      build_l2:
+        description: "Also build the L2 TFS image (very slow: full TF build)"
+        type: boolean
+        default: false
+
+jobs:
+  l1-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Mount bazel caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/bazel
+            ~/.cache/bazelisk
+          key: bazel-l1-${{ runner.os }}-${{ hashFiles('MODULE.bazel', '.bazelversion') }}
+          restore-keys: bazel-l1-${{ runner.os }}-
+      - name: Test L1 (authoritative Linux x86_64)
+        run: bazel test //cb:catboost_model_test --test_output=errors
+
+  # The L2 image build compiles the full TF dependency tree from a cold cache
+  # (the upstream devel image wipes it) — several hours, may exceed public
+  # runner limits. Opt-in via workflow_dispatch.
+  l2-image:
+    if: github.event_name == 'workflow_dispatch' && inputs.build_l2
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disk space
+        run: sudo rm -rf /usr/local/lib/android /opt/hostedtoolcache/CodeQL /usr/share/dotnet
+      - name: Build L2 image (includes adapter test)
+        run: docker build -f docker/Dockerfile.devel -t catboost-serving:devel .

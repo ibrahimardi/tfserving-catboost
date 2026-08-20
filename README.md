@@ -119,6 +119,23 @@ a restart:
 ./docker/e2e/run_e2e.sh          # uses image catboost-serving:devel
 ```
 
+## Continuous integration
+
+The GitHub Actions definition lives at
+[ci/github-actions-ci.yml](ci/github-actions-ci.yml) rather than under
+`.github/workflows/` — pushing to that path requires a token with the
+`workflow` scope. To activate it:
+
+```sh
+gh auth refresh -h github.com -s workflow      # one-time scope grant
+mkdir -p .github/workflows
+git mv ci/github-actions-ci.yml .github/workflows/ci.yml
+git commit -m "Activate GitHub Actions CI" && git push
+```
+
+It runs the L1 test suite on ubuntu-24.04 (the authoritative Linux x86_64
+check) on every push, and can build the L2 image on manual dispatch.
+
 ## Pinned versions
 
 - CatBoost **1.2.8** (`libcatboostmodel` binaries by sha256 + vendored C API headers — keep in sync)
