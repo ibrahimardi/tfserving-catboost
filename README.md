@@ -33,6 +33,13 @@ pip install catboost numpy
 python3 cb/testdata/train_test_models.py
 ```
 
+Training is seeded, so the *predictions* it writes are reproducible bit-for-bit
+— rerunning the script leaves `expected_predictions.json` byte-identical. The
+`.cbm` files themselves are not byte-reproducible (CatBoost embeds
+non-deterministic metadata), so `git status` will show them modified even when
+nothing about the models changed; discard those with `git checkout` unless you
+actually retrained.
+
 Verify L1 on Linux without leaving the Mac:
 
 ```sh
